@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"login/commons"
+	"login/helpers"
 	"login/models"
+	"login/utils"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -89,14 +91,6 @@ func DeleteUser(writer http.ResponseWriter, request *http.Request) {
 }
 
 func Login(writer http.ResponseWriter, request *http.Request) {
-	type Credentials struct {
-		UserName string `json:"userName"`
-		Password string `json:"password"`
-	}
-
-	type Token struct {
-		Token string `json:"token"`
-	}
 
 	user := models.User{}
 
@@ -106,7 +100,7 @@ func Login(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	// Obtener las credenciales de inicio de sesión desde el cuerpo de la solicitud
-	var creds Credentials
+	var creds utils.Credentials
 	err := json.NewDecoder(request.Body).Decode(&creds)
 
 	if err != nil {
@@ -120,11 +114,20 @@ func Login(writer http.ResponseWriter, request *http.Request) {
 
 	if user.ID != uuid.Nil {
 		//genero token
-		token := "token de autenticacion"
+		token, error := helpers.GenerateToken(user)
+		if error != nil {
+			http.Error(writer, "Error al generar el token", http.StatusInternalServerError)
+			return
+		}
 
 		//envio token en la respuesta
-		json.NewEncoder(writer).Encode(Token{Token: token})
-		// commons.SendResponse(writer, http.StatusOK, []byte(token))
+		// json.NewEncoder(writer).Encode(utils.Token{Token: token})
+
+		tokenBytes, err := json.Marshal(utils.Token{Token: token})
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+		}
+		commons.SendResponse(writer, http.StatusOK, []byte(tokenBytes))
 	} else {
 		commons.SendError(writer, http.StatusNoContent)
 	}
