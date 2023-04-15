@@ -13,4 +13,5 @@ func SetPersonasRoutes(router *mux.Router) {
 	subRoute.HandleFunc("/save", controllers.SaveUser).Methods("POST")
 	subRoute.HandleFunc("/find/{id}", controllers.GetUserbyId).Methods("GET")
 	subRoute.HandleFunc("/delete/{id}", controllers.DeleteUser).Methods("POST")
+	subRoute.HandleFunc("/login", controllers.Login).Methods("POST")
 }

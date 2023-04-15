@@ -87,3 +87,45 @@ func DeleteUser(writer http.ResponseWriter, request *http.Request) {
 		commons.SendError(writer, http.StatusNoContent)
 	}
 }
+
+func Login(writer http.ResponseWriter, request *http.Request) {
+	type Credentials struct {
+		UserName string `json:"userName"`
+		Password string `json:"password"`
+	}
+
+	type Token struct {
+		Token string `json:"token"`
+	}
+
+	user := models.User{}
+
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Obtener las credenciales de inicio de sesión desde el cuerpo de la solicitud
+	var creds Credentials
+	err := json.NewDecoder(request.Body).Decode(&creds)
+
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	//verificar las credenciales
+	db := commons.GetConnection()
+	db.Where("user_name = ? AND password = ?", creds.UserName, creds.Password).Find(&user)
+
+	if user.ID != uuid.Nil {
+		//genero token
+		token := "token de autenticacion"
+
+		//envio token en la respuesta
+		json.NewEncoder(writer).Encode(Token{Token: token})
+		// commons.SendResponse(writer, http.StatusOK, []byte(token))
+	} else {
+		commons.SendError(writer, http.StatusNoContent)
+	}
+}
